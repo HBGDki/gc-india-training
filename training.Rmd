@@ -1,0 +1,145 @@
+---
+title: "Grand Challenges India HBGDki Training"
+date: "March 23, 2017"
+output:
+   html_notebook:
+      self_contained: false
+---
+
+```{r message=FALSE}
+library(hbgd)
+library(tidyverse)
+library(trelliscopejs)
+```
+
+# Read in cmc data
+
+```{r, message=FALSE}
+cmc <- read_csv("data/cmc_synthetic.csv")
+```
+
+# Take a look at the data
+
+```{r}
+cmc
+```
+
+# Check to see if it meets data requirements for hbgd
+
+```{r collapse=TRUE}
+check_data(cmc)
+```
+
+It told us to use lowercase names:
+
+```{r collapse=TRUE}
+names(cmc) <- tolower(names(cmc))
+check_data(cmc)
+```
+
+Looks good.
+
+NOTE: I was going to put an example here showing the growth standard functions in the package, looking at the distribution of mother's HAZ (we only have mother's height but we have mother's age too so it's a good use case to compute HAZ). However, mother's age and height are all NA!
+
+# Missing values
+
+```{r}
+plot_missing(cmc, subject = TRUE)
+plot_missing(cmc, subject = FALSE)
+```
+
+# Some univariate summaries
+
+## Subject-level variable distributions
+
+```{r}
+plot_univar(cmc, subject = TRUE)
+```
+
+## Time-varying variable distributions
+
+```{r}
+plot_univar(cmc, subject = FALSE)
+```
+
+## Histogram and quantile plot of number of records per subject
+
+```{r}
+plot_visit_distn(cmc, width = 350, height = 350)
+```
+
+There are a lot of visits - is that right?
+
+## Histogram and quantile plot of age (in days) of first observed record per subject
+
+```{r}
+plot_first_visit_age(cmc, width = 350, height = 350)
+```
+
+All are observed on day 1.
+
+## Distribution of the number of records by age
+
+```{r}
+agefreq <- get_agefreq(cmc)
+plot_agefreq(agefreq)
+```
+
+# Applying growth models
+
+## Apply the brokenstick model to the cmc data
+
+This will fit haz vs. age by default:
+
+```{r}
+cmcfit <- get_fit(cmc, method = "brokenstick")
+```
+
+## Split the data up by subject
+
+```{r}
+cmcsubj <- by_subject(cmc)
+```
+
+This is now a data frame with one row per subject. It contains subject-level data and a column "longi" with a data frame of longitudinal data for the subject:
+
+```{r}
+cmcsubj
+```
+
+## Apply the brokenstick model fit to each subject
+
+```{r}
+dat <- fit_all_trajectories(cmcsubj, cmcfit)
+```
+
+NOTE: we can show how to do holdouts and get holdout MSE to compare methods...
+
+The new object, `dat` is the same as `cmcsubj` but has an additional column, "fit" with fitted model.
+
+```{r}
+dat
+```
+
+## Plot the fitted trajectory for the first subject
+
+```{r}
+plot(dat$fit[[1]])
+```
+
+## Plot on the z-score scale
+
+```{r}
+plot_z(dat$fit[[1]])
+```
+
+## Look at all fits on z-score scale using trelliscope
+
+```{r message=FALSE}
+dat %>%
+  add_all_cogs() %>%
+  add_trajectory_plot(z = TRUE) %>%
+  trelliscope(name = "cmc_brokenstick_haz", path = "rmarkdown_files")
+```
+
+There are some pretty interesting trajectories here...
