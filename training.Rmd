@@ -172,8 +172,6 @@ hbgd_labels[names(dat)]
 
 Let's make our first plot of the data. Here we will plot height vs. age for each subject on the same plot and overlay a smooth mean curve. (TODO: high-level description of ggplot and the basics of what's happening here).
 
-TODO: add `geom_who()` in here to compare trajectories to WHO standard
-
 ```{r}
 ggplot(dat, aes(x = agedays, y = htcm)) +
   geom_line(aes(group = subjid), alpha = 0.5) +
