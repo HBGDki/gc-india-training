@@ -341,7 +341,7 @@ The Linf is 97 cm and L0 is 51 cm both are resonable. The growth rate is approxi
 The residuals plot show that we have a sigmoidal trend. Obviously there is an important feature of the growth that this model is not able to capture. We will get back to the AIC for model comparisons.
 
 Before trying more elaborate models let us see how the data based rate of growth (velocity) versus the model based one compare.
-The data based velocity is a simple timewise difference of length divided by the age difference 
+The data based velocity is a simple timewise difference of length divided by the age difference
 (Length obs2 - length obs1) / (age obs2 - age obs1)
 The model based velocity can be computed using the derivative of the funciton
 Length= Linf - (Linf - L0) * exp(-Kgr * AGE)
@@ -367,7 +367,7 @@ pred.fit1$pred <- predict(fit1, newdata = pred.fit1, level = 0)
 pred.fit1$dldt <- with(as.list(fixef(fit1)),
   exp(lnKgr) * (exp(lnLinf) - exp(lnL0)) * exp(-exp(lnKgr) * pred.fit1$AGEMONTH))
 
-plot1 <- ggplot( data = deltadplyr, aes (x = obsmean, y = dldt) ) + 
+plot1 <- ggplot( data = deltadplyr, aes (x = obsmean, y = dldt) ) +
   geom_point(alpha=0.1)+
   xlab ("Length (cm)" )+
   ylab ( "Derivative of length (dL/dt)") +
@@ -383,7 +383,7 @@ plot1
 We notice that the "velocity" is changing and it is not simply proportional to the current length as we grow taller the velocity becomes slower let us try a modelr where the rate of growth decelerate with time.
 Kgr   = Kgr0 * (1 - Kgrdec + Kgrdec * exp(-lambda * TIME))
 Length= Linf - (Linf - L0) * exp(-Kgr * TIME)
-The difference with the previous model is that the growth rate Kgr is decelerating over time it starts with a baseline Kgr0 and decelerates using a hyperbolic function  
+The difference with the previous model is that the growth rate Kgr is decelerating over time it starts with a baseline Kgr0 and decelerates using a hyperbolic function
 
 
 
@@ -579,9 +579,22 @@ We can accomplish this using the "trelliscopejs" package. Trelliscope is a visua
 allfits %>%
   add_all_cogs() %>%
   add_trajectory_plot(z = TRUE) %>%
-  trelliscope(name = "brokenstick_haz", path = "rmarkdown_files")
+  trelliscope(name = "brokenstick_haz", path = "rmarkdown_files",
+    nrow = 2, ncol = 4)
 ```
 
-This should open up an interactive viewer in your web browser.
+This should open up an interactive viewer in your web browser. When the display opens, you should see something like this:
 
-Explore the display...
+![](images/trelliscope.png)
+
+There are 250 children in the dataset. 250 panels is too many to display at once, which is why the display is showing the first 8, by default ordered by subject ID.
+
+Here are some simple interactions you can do with the Trelliscope display:
+
+- Use the **"Prev"** and **"Next"** buttons, or your left and right arrow keys, to page through the panels of the display. This simple quick navigation helps you scan and find patterns that stick out.
+- Click the **"Grid"** button on the sidebar and change the number of rows and columns that are being displayed per page.
+- Click the **"Sort"** button on the sidebar to change the variables to order the panels according to.
+  - You can click the **"x"** icon next to the existing sort variable ("subjid") to remove the sorting on that variable, and then choose a new variable from the list to sort on. The blue icon next the variable name allows you to toggle the order from increasing to decreasing.
+- Click the "Filter" button on the sidebar to filter the panels to be displayed. A list of cognostic variables is shown and you can select one to filter on. For example, if you select `birthwt`, an interactive histogram showing the distribution of this variable appears and you can click and drag on the distribution to select panels for children that, for example, have low birth weight.
+- Click the "Labels" button on the sidebar to control which labels are displayed underneath each panel.
+
