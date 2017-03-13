@@ -6,140 +6,356 @@ output:
       self_contained: false
 ---
 
+# Overview
+
+In this training we will cover methods for exploration, modeling, and visualization of data from a child growth study using tools and methods developed under the HBGDki program. We will cover the following topics:
+
+- Reading in and merging multiple data files containing associated with a study and ensuring it is ready for analysis.
+- Calculating Z-scores of anthropometric variables based on the WHO and INTERGROWTH standards.
+- Checking the distributions of variables in the data and making some simple exploratory plots to get a better understanding of the study.
+- Applying various anthropometric growth modeling and diagnostic methods.
+- Visualizing and exploring anthropometric data with fitted growth curves
+
+## R Environment
+
+All of the exercises will be carried out using the R statistical programming environment making use of several modeling and visualization R packages, as well as the [hbgd]() R package which has been developed to make many of the aspects of working growth data easier to do.
+
+If you do not have much familiarity with R, you will still be able to comfortably run the examples in this training and follow along with the logic of what we are doing. If you wish to get more experience with R in general, we recommend a free resource, ["Swirl"](http://swirlstats.com/) to get acquainted with the basics of R.
+
+## Running on Your Own
+
+Participants will access this training through a virtual machine running in the cloud, with all code and R packages pre-installed and ready to run. For those wishing to continue their learning after this event, all code and data for these exercises can be found publicly online [here]() and the README file on that page will contain instructions for getting this environment set up in your own environment and will provide links to other useful resources as well.
+
+## Data
+
+In this training, we will work with synthetic data from a hypothetical study. We have 3 csv files that might mirror how data is collected and maintained throughout the course of a study.
+
+#### enrollment.csv
+
+This file contains the information collated for each subject at enrollment for the study.
+
+Here are the first few observations held in this file:
+
+```
+SUBJID,APGAR5,GAGEBRTH,MEDUCYRS,BIRTHWT,BIRTHLEN,DELIVERY,SES,GRAVIDA,NLCHILD,DLVLOC,COMPRISK,EDUCCRGV,SEX
+0,NA,270.0,10,2800,48.0,Normal Vaginal,Middle,1,0,Hospital,NA,10,M
+1,10.0,283.0,3,3725,51.9,Normal Vaginal,Middle,1,0,Hospital,NA,3,M
+2,NA,272.0,0,2680,46.8,Normal Vaginal,Low,1,0,Hospital,NA,0,M
+3,NA,288.0,0,2540,47.05,Normal Vaginal,Low,3,2,Hospital,NA,0,F
+4,NA,285.0,10,2700,NA,Normal Vaginal,Low,1,0,Hospital,NA,10,F
+...
+```
+
+The first row of data is the header and each column is separated by a comma. Note that we have a subject ID and for each subject, we have several measurements. The meaning of some of these variables is evident from the column names but we see more about understanding the meaning of the variable names later.
+
+#### anthro.csv
+
+This file contains anthropometric variables measured over the first 3 years of each subject's life. The first few records in this data file:
+
+```
+SUBJID,AGEDAYS,BMI,HTCM,WTKG
+0,1,12.15,49.11,2.94
+0,32,14.19,52.82,3.77
+0,57,12.48,57.88,4.55
+0,90,15.05,61.06,5.41
+...
+```
+
+Here we see measurements for subject with ID=0 at ages 1, 32, 57, and 90 days.
+
+#### post.csv
+
+This file contains additional information tabulated about each child at the end of the study, having to do with diarrheal episodes.
+
+```
+SUBJID,SUMEP,SUMDIAR,SUMDAYS,PCTDIAR
+0,5.0,29.0,1094,2.6508226691
+1,21.0,81.0,1057,7.6631977294
+2,4.0,5.0,1092,0.4578754579
+3,7.0,18.0,1092,1.6483516484
+4,3.0,10.0,1049,0.9532888465
+...
+```
+
+We want to read in and merge all of this data into a form that we can analyze. This will be the first step in our exercises below.
+
+# Exercises
+
+The remainder of this document contains hands-on examples of working with this data as outlined above.
+
+## Getting Set Up
+
+To begin, we need to load the R packages into our R environment that we will be using to analyze the data. The major packages we will use throughout are the [hbgd]() package and packages in the "Tidyverse". This collection of packages provides many powerful methods for many general-purpose data manipulation and visualization tasks. A free, excellent in-depth resources on package in the Tidyverse can be found [here]().
+
 ```{r message=FALSE}
 library(hbgd)
 library(tidyverse)
 library(trelliscopejs)
 ```
 
-# Read in cmc data
+## Reading in the Data
+
+We described our three data files above, `enrollment.csv`, `anthro.csv`, and `post.csv`. These are all located in a subdirectory, `data/`.
+
+We can read these three files into R as R data frames using the `read_csv()` function available in the Tidyverse "readr" R package. After reading them in, we will take a look at the `enroll` data frame.
 
 ```{r, message=FALSE}
-cmc <- read_csv("data/cmc_synthetic.csv")
+enroll <- read_csv("data/enrollment.csv")
+anthro <- read_csv("data/anthro.csv")
+post <- read_csv("data/post.csv")
+
+enroll
 ```
 
-# Take a look at the data
+We see that there are 250 subjects in our study, and we can look at the values recorded at enrollment for these subjects.
+
+(Possible early very simple exercise: View the data for the other data frames that we read in... How many anthro records are there? How many "post" records are there?)
+
+## Joining the Data
+
+We want to merge these three data frames into a single dataset that we can use for analysis.
+
+First, let's merge the enrollment data and the anthro data. As we saw above, the enrollment data has one row per subject, while the anthro data has multiple records per subject. To merge the two, we want to match on subject IDs and preserve all the data. We can do this with a "full join" of the two datasets, which preserves all rows from both data sets based on a common variable or set of variables, repeating any rows as necessary.
+
+In the Tidyverse package "dplyr", we can use the `full_join()` function in dplyr to achieve a full join. This function will detect any columns the two datasets have in common and use them as the joining vairables (here, the common variable is `subjid`, which is what we want to merge on).
 
 ```{r}
-cmc
+anthro_enroll <- full_join(anthro, enroll)
+
+anthro_enroll
 ```
 
-# Check to see if it meets data requirements for hbgd
+It looks like we have successfully joined the data.
 
-```{r collapse=TRUE}
-check_data(cmc)
-```
-
-It told us to use lowercase names:
-
-```{r collapse=TRUE}
-names(cmc) <- tolower(names(cmc))
-check_data(cmc)
-```
-
-Looks good.
-
-NOTE: I was going to put an example here showing the growth standard functions in the package, looking at the distribution of mother's HAZ (we only have mother's height but we have mother's age too so it's a good use case to compute HAZ). However, mother's age and height are all NA!
-
-# Missing values
+We can join in the "post" dataset in a similar fashion. We will call the output of all three merged files `dat`, and this will be the dataset we use for our analyses.
 
 ```{r}
-plot_missing(cmc, subject = TRUE)
-plot_missing(cmc, subject = FALSE)
+dat <- full_join(anthro_enroll, post)
+
+dat
 ```
 
-# Some univariate summaries
+## Checking the Data
 
-## Subject-level variable distributions
+Throughout, we will be using the "hbgd" R package to help with our anlysis. To help us stay organized across analyses, the "hbgd" package enforces some data checks. One enforcement is that there are certain variables that must be present (`subjid`, for example). The package has a registry of variable names that have particular meaning and these are checked for to ensure clean code and organization across different datasets.
+
+### Using check_data()
+
+We can check to see if our data conforms to the standards of the "hbgd" package with the following:
 
 ```{r}
-plot_univar(cmc, subject = TRUE)
+check_data(dat)
 ```
 
-## Time-varying variable distributions
+We see some checks that did not pass. First, it told us that "All variable names are expected to be lowercase." and gave us a suggestion to fix it. It also told us that there is not an expected variable, `agedays` in the data, but that there is a variable with a name that is close, 'AGEDAY'. It also checks for other variables that are not required, but that it would expect to see in anthropometric data. Two of these, `haz` and `waz`, are variables we will add in later on.
+
+To fix the major problems with the data, we want to make the variable names lowercase and rename `ageday` to `agedays`, which we can do with dplyr's `rename()` function. Then we can re-run `check_data()` to make sure we fixed everything.
 
 ```{r}
-plot_univar(cmc, subject = FALSE)
+names(dat) <- tolower(names(dat))
+dat <- rename(dat, agedays = ageday)
+
+check_data(dat)
 ```
 
-## Histogram and quantile plot of number of records per subject
+It looks like we are in good shape.
+
+### Looking at Labels
+
+One of the advantages of enforcing a common naming scheme for variables in the hbgd package is that we can store a database of variable labels for commonly-used variables. For example, if we want to know the meaning of all of the variables in our dataset, we can access them through a lookup table provided by the hbgd package, `hbgd_labels`:
 
 ```{r}
-plot_visit_distn(cmc, width = 350, height = 350)
+hbgd_labels[names(dat)]
 ```
 
-There are a lot of visits - is that right?
+### A Quick Plot
 
-## Histogram and quantile plot of age (in days) of first observed record per subject
+Let's make our first plot of the data. Here we will plot height vs. age for each subject on the same plot and overlay a smooth mean curve. (TODO: high-level description of ggplot and the basics of what's happening here).
+
+TODO: add `geom_who()` in here to compare trajectories to WHO standard
 
 ```{r}
-plot_first_visit_age(cmc, width = 350, height = 350)
+ggplot(dat, aes(x = agedays, y = htcm)) +
+  geom_line(aes(group = subjid), alpha = 0.5) +
+  geom_smooth(aes(group = 1), colour = "red", size = 1,
+    method = "gam", formula = y ~ s(x))
 ```
 
-All are observed on day 1.
+### Data Utility Functions
 
-## Distribution of the number of records by age
+There are other utility functions for dealing with data in the hbgd package. The typical kind of dataset we work with in the package is a single data frame of anthropometric measurements as well as subject-level variables (such as those recorded at enrollment). However, often we want to work with just the subject-level data and ignore the anthropometry. To get just the subject-level data, we can use the function `get_subject_data()`. Below we create a new data frame of just the subject-level data, `subj_dat`, and print it:
 
 ```{r}
-agefreq <- get_agefreq(cmc)
+subj_dat <- get_subject_data(dat)
+subj_dat
+```
+
+## Growth standards
+
+### HAZ and WAZ from WHO
+
+We saw in our data check that it was hoping to see `haz` and `waz` (height-for-age z-score and weight-for-age z-score) variables in the data. These can be derived from the `htcm` and `wtkg` variables using the subject's `agedays` and the WHO growth standard, which is built in to the hbgd package. The data checking function also provided us with the code we need to perform this transformation:
+
+```{r}
+dat$haz <- who_htcm2zscore(dat$agedays, dat$htcm, dat$sex)
+dat$waz <- who_wtkg2zscore(dat$agedays, dat$wtkg, dat$sex)
+```
+
+A full set of WHO conversion functions can be seen [here](http://hbgdki.github.io/hbgd/rd.html#specific_value_to_centilez_score).
+
+Now that we have made this conversion, let's look at the growth curves on the z-score scale:
+
+```{r}
+ggplot(dat, aes(x = agedays, y = haz)) +
+  geom_line(aes(group = subjid), alpha = 0.5) +
+  geom_smooth(aes(group = 1), colour = "red", size = 1,
+    method = "gam", formula = y ~ s(x))
+```
+
+### SGA from INTERGROWTH
+
+The hbgd package has other growth standards available for use, including INTERGROWTH fetal and birth standards. Since this data has gestational age at birth and birthweight, we can use the INTERGROWTH birth standard to look at the distribution of children's birth weight percentiles and see how much of the population is small for gestational age (SGA).
+
+Looking at the documentation for the INTERGROWTH conversion function [here](http://hbgdki.github.io/hbgd/rd.html#specific_value_to_centilez_score_1), we see that it requires us to provide birth weight in kilograms. From our labels above, we saw that the variable `birthwt` should be reported in grams, so we make the conversion.
+
+Note that we want to apply this conversion to only
+ our subject-level dataset since it has one record per subject, while `dat` has multiple rows per subject.
+
+Here we compute the birth weight centile for each child, calculate the percentage of these children below the 10th centile, and plot a histogram of the result.
+
+```{r}
+birthcentile <- igb_wtkg2centile(subj_dat$gagebrth,
+  subj_dat$birthwt / 1000, sex = subj_dat$sex)
+
+# 31.6% of children are small for gestational age
+length(which(birthcentile < 10)) / length(birthcentile)
+
+hist(birthcentile)
+abline(v = 10)
+```
+
+## Exploratory Plots
+
+The hbgd package has several functions that allow you to get a quick overview of some of the attributes of your dataset.
+
+### Missing Values
+
+The `plot_missing()` function will give you a plot showing each variable and how many times it is NA vs. non-NA. It distinguishes between subject-level variables and time-varying variables, which can be toggled with the option `subject = TRUE/FALSE`.
+
+```{r}
+plot_missing(dat, subject = TRUE)
+plot_missing(dat, subject = FALSE)
+```
+
+### Univariate Summaries
+
+Subject-level variable distributions:
+
+```{r}
+plot_univar(dat, subject = TRUE)
+```
+
+Time-varying variable distributions:
+
+```{r}
+plot_univar(dat, subject = FALSE)
+```
+
+### Records Per Subject
+
+To get a feel for how densely measured the children in the study are, we can use the `plot_visit_distn()` to get a histogram and quantile plot of the number of records per subject:
+
+```{r}
+plot_visit_distn(dat, width = 350, height = 350)
+```
+
+The median number of times a child is observed in this data is 38 times, roughly once per month over 3 years.
+
+## First Observed Record Per Subject
+
+We can use `plot_first_visit_age()` to get a histogram and quantile plot of age (in days) of the first observed record for each subject:
+
+```{r}
+plot_first_visit_age(dat, width = 350, height = 350)
+```
+
+All children werre observed on day 1.
+
+### Number of Records by Age
+
+It is useful to look at the number of records in the data by child's age to see if there is a pattern to the tracking design of the study. We can use the `get_agefreq()` function to calculate the frequency of measurements for each age, and then `plot_agefreq()` to plot the result.
+
+```{r}
+agefreq <- get_agefreq(dat)
 plot_agefreq(agefreq)
 ```
 
-# Applying growth models
+The ages at which measurements are taken have a monthly periodicity.
 
-## Apply the brokenstick model to the cmc data
+## Applying Growth Models
 
-This will fit haz vs. age by default:
+--- An example or two from Samer's code here ---
+
+## Applying Growth Models Using the hbgd Package
+
+While it is useful to fit models to data in a completely free-form and ad-hoc manner as in the previous examples, the hbgd R package provides a uniform interface to a library of anthropometric growth modeling functions as well as diagnostic and visualization methods for the results of these models. This can make it much easier to access modeling methods from a curated library of possible choices.
+
+### Apply the Brokenstick Model to the dat data
+
+TODO: narrative
 
 ```{r}
-cmcfit <- get_fit(cmc, method = "brokenstick")
+datfit <- get_fit(dat, method = "brokenstick", y_var = "haz")
 ```
 
-## Split the data up by subject
+TODO: narrative
 
 ```{r}
-cmcsubj <- by_subject(cmc)
+datsubj <- by_subject(dat)
 ```
 
 This is now a data frame with one row per subject. It contains subject-level data and a column "longi" with a data frame of longitudinal data for the subject:
+TODO: narrative
 
 ```{r}
-cmcsubj
+datsubj
 ```
 
-## Apply the brokenstick model fit to each subject
+Apply the brokenstick model fit to each subject
+TODO: narrative
 
 ```{r}
-dat <- fit_all_trajectories(cmcsubj, cmcfit)
+allfits <- fit_all_trajectories(datsubj, datfit)
 ```
 
 NOTE: we can show how to do holdouts and get holdout MSE to compare methods...
 
-The new object, `dat` is the same as `cmcsubj` but has an additional column, "fit" with fitted model.
+The new object, `allfits` is the same as `datsubj` but has an additional column, "fit" with fitted model.
 
 ```{r}
-dat
+allfits
 ```
 
-## Plot the fitted trajectory for the first subject
+Plot the fitted trajectory for the first subject
 
 ```{r}
-plot(dat$fit[[1]])
+plot(allfits$fit[[1]])
 ```
 
-## Plot on the z-score scale
+Plot on the z-score scale
 
 ```{r}
-plot_z(dat$fit[[1]])
+plot_z(allfits$fit[[1]])
 ```
 
-## Look at all fits on z-score scale using trelliscope
+Look at all fits on z-score scale using trelliscope
+TODO: narrative
 
 ```{r message=FALSE}
-dat %>%
+allfits %>%
   add_all_cogs() %>%
   add_trajectory_plot(z = TRUE) %>%
-  trelliscope(name = "cmc_brokenstick_haz", path = "rmarkdown_files")
+  trelliscope(name = "brokenstick_haz", path = "rmarkdown_files")
 ```
 
-There are some pretty interesting trajectories here...
+Point out some interesting trajectories...
