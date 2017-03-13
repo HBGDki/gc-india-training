@@ -1,3 +1,10 @@
+# Define the logit and inverse-logit (aka expit) functions
+
+logit <- function(x) log(x / (1 - x))
+expit <- function(x) 1 / (1 + exp(-x))
+
+
+
 ##### Mono-exponential growth model #####
 # Y(t) = Linf - (Linf - L0)*exp(-Kgr * t) + error
 
