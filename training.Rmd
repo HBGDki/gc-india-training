@@ -310,7 +310,7 @@ L0 is the length at time = 0
 Kgr is the rate of exponential growth
 
 ```{r}
-source("ModelFunctions.r")
+source("ModelFunctions.R")
 require(nlme)
 d <- anthro_enroll
 d$AGEMONTH <- days2months(d$AGEDAY)
