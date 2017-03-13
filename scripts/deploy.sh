@@ -39,6 +39,7 @@ done
 
 sudo cp -rf /home/ubuntu/gc-india-training/data /home/rstudio/
 sudo cp -f /home/ubuntu/gc-india-training/training.Rmd /home/rstudio/
+sudo cp -f /home/ubuntu/gc-india-training/ModelFunctions.R /home/rstudio/
 sudo chown -R rstudio:rstudio /home/rstudio/
 
 # since we'll be updating files, make this a separate loop
@@ -46,6 +47,7 @@ for u in {1..10}
 do
   sudo cp -rf /home/ubuntu/gc-india-training/data /home/user$u/
   sudo cp -f /home/ubuntu/gc-india-training/training.Rmd /home/user$u/
+  sudo cp -f /home/ubuntu/gc-india-training/ModelFunctions.R /home/user$u/
   sudo chown -R user$u:user$u /home/user$u/
 done
 
