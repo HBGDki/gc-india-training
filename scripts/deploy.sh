@@ -23,8 +23,7 @@ sudo rstudio-server restart
 echo "rstudio:rstudio" | sudo chpasswd
 sudo chmod -R 0777 /home/rstudio
 
-git clone https://github.com/HBGDki/gc-india-training /home/rstudio/tmp
-mv /home/rstudio/tmp/* /home/rstudio/
+git clone https://github.com/HBGDki/gc-india-training
 sudo chown -R rstudio:rstudio /home/rstudio/
 
 # add 10 users for training session
@@ -37,11 +36,16 @@ do
   sudo chmod -R 0777 /home/user$u
 done
 
+
+sudo cp -rf /home/ubuntu/gc-india-training/data /home/rstudio/
+sudo cp -f /home/ubuntu/gc-india-training/training.Rmd /home/rstudio/
+sudo chown -R rstudio:rstudio /home/rstudio/
+
 # since we'll be updating files, make this a separate loop
 for u in {1..10}
 do
-  sudo cp -r /home/rstudio/data /home/user$u/
-  sudo cp /home/rstudio/training.Rmd /home/user$u/
+  sudo cp -rf /home/ubuntu/gc-india-training/data /home/user$u/
+  sudo cp -f /home/ubuntu/gc-india-training/training.Rmd /home/user$u/
   sudo chown -R user$u:user$u /home/user$u/
 done
 
