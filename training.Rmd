@@ -244,22 +244,31 @@ The `plot_missing()` function will give you a plot showing each variable and how
 
 ```{r}
 plot_missing(dat, subject = TRUE)
+```
+
+Other than `apgar5` and `comprisk`, our variables are fairly complete. You can hover the bars in the barchart to see the number of missing observations.
+
+```{r}
 plot_missing(dat, subject = FALSE)
 ```
 
+There are no missing anthropometry variables.
+
 ### Univariate Summaries
 
-Subject-level variable distributions:
+With R, it is simple to create univariate summaries such as histograms and barcharts, but the hbgd package has a simple function that will create univariate distribution plots of all of your variables and add the appropriate labels for the variable names. This function, `plot_univar()`, operates like `plot_missing()` in that it has a `subject = TRUE/FALSE` flag to plot distributions for subject-level or time-varying variables. This separation is necessary because for subject-level variables, we only want to count things once.
 
 ```{r}
 plot_univar(dat, subject = TRUE)
 ```
 
-Time-varying variable distributions:
+Here we get a grid of distribution plots, bar charts for categorical variables and histograms for numeric variables. Glancing these distributions can be useful to look for obvious outliers, look for unexpected shapes in distributions, and ensure that the units the variables are being reported in make sense.
 
 ```{r}
 plot_univar(dat, subject = FALSE)
 ```
+
+Everything looks good.
 
 ### Records Per Subject
 
@@ -298,58 +307,79 @@ The ages at which measurements are taken have a monthly periodicity.
 
 ## Applying Growth Models Using the hbgd Package
 
-While it is useful to fit models to data in a completely free-form and ad-hoc manner as in the previous examples, the hbgd R package provides a uniform interface to a library of anthropometric growth modeling functions as well as diagnostic and visualization methods for the results of these models. This can make it much easier to access modeling methods from a curated library of possible choices.
+While it is useful to fit models to data in a completely free-form and ad-hoc manner as in the previous examples, the hbgd R package provides a uniform interface to a library of anthropometric growth modeling functions as well as diagnostic and visualization methods for the results of these models, as well as automatic computations of z-score transformations and derivatives. This can make it much easier to access modeling methods from a curated library of possible choices.
 
-### Apply the Brokenstick Model to the dat data
-
-TODO: narrative
+To see what methods are currently available in the hbgd package:
 
 ```{r}
-datfit <- get_fit(dat, method = "brokenstick", y_var = "haz")
+get_avail_methods()
 ```
 
-TODO: narrative
+In this section we will show an example of fitting using the "brokenstick" method.
+
+### Apply the Brokenstick Model to the data
+
+The brokenstick method...
+
+To apply a fit method to data, we use the `get_fit()` function. We provide this function with our data, a specification of which method to use, the variables to use in fitting (`x_var` is expected to be `agedays` and `y_var` can be any anthropometric measure or its z-score transformation), and optionally any parameters to pass on to the fitting method being used.
+
+Here, we apply the brokenstick method to HAZ and specify the location of the knots (a brokenstick-specific fitting parameter).
 
 ```{r}
-datsubj <- by_subject(dat)
+datfit <- get_fit(dat, method = "brokenstick", y_var = "haz",
+  knots = seq(1, 1100, by = 150))
+
+datfit
 ```
 
-This is now a data frame with one row per subject. It contains subject-level data and a column "longi" with a data frame of longitudinal data for the subject:
-TODO: narrative
+The resulting object is a fit object from the fitting method along with other information about the fit.
+
+We can apply this fitting result to all of our subjects using `fit_all_trajectories()`.
 
 ```{r}
-datsubj
-```
+allfits <- fit_all_trajectories(dat, datfit)
 
-Apply the brokenstick model fit to each subject
-TODO: narrative
-
-```{r}
-allfits <- fit_all_trajectories(datsubj, datfit)
-```
-
-NOTE: we can show how to do holdouts and get holdout MSE to compare methods...
-
-The new object, `allfits` is the same as `datsubj` but has an additional column, "fit" with fitted model.
-
-```{r}
 allfits
 ```
 
-Plot the fitted trajectory for the first subject
+This is now a data frame with one row per subject. Each row contains subject-level data and a column "longi" with a data frame of the longitudinal data for the subject and another column called `fit` which contains the fitted values for the subject. These columns are not scalar data types like we are used to with data frames, but are "list columns". This is a useful way to store arbitrary data in a data frame format, and you can read more about this [here]().
+
+If you are curious to inspect what is contained in the `longi` and `fit` columns, we can inspect it for the first subject:
 
 ```{r}
-plot(allfits$fit[[1]])
+allfits[1,]$longi
+str(allfits[1,]$fit)
 ```
 
-Plot on the z-score scale
+The `longi` column is simply a data frame of the time-varying variables the the subject. The `fit` column is a list storing several variations of the model fit, including the fitted values, the curve imputed over a grid of points (including the z-score transformed version of the variable as well as numeric derivatives), and the raw data for the subject.
+
+NOTE: we can show how to do holdouts and get holdout MSE to compare methods...
+
+### Plot the fitted trajectory for the first subject
+
+There is a built-in plot method for plotting individual trajectories. For example, to plot the fitted trajectory for the second subject:
 
 ```{r}
-plot_z(allfits$fit[[1]])
+plot(allfits$fit[[2]])
 ```
 
-Look at all fits on z-score scale using trelliscope
-TODO: narrative
+This plots the subject's growth trajectory on the raw scale, superposed over the WHO growth standard (each band represents one standard devation), and a superposed fitted line from our model.
+
+This child was tracking well below stunted for the first year of life and then recovered to be tracking around the median thereafter.
+
+It is often useful to look at the data and fitted trajectory on the z-score scale, which we can do with `plot_z()`.
+
+```{r}
+plot_z(allfits$fit[[2]])
+```
+
+Viewing the trajectory at this scale helps us see what is happening more clearly. It also highlights the piecewise linear nature of the brokenstick method.
+
+### Look at all fits on z-score scale using trelliscope
+
+Rather than manually creating trajectory plots for each subject, it is very useful to be able to potentially look at any growth trajectory on-demand, and to interactively call trajectories to attention based on different search criteria.
+
+We can accomplish this using the "trelliscopejs" package. Trelliscope is a visualization technique that allows you to create a database of a potentially very large number of plots which you can sort and filter in an interactive viewer. The variables against which you sort and filter are called "cognostics". A Trelliscope display is created using the `trelliscope()` function. This function expects to receive a data frame like our `allfits` data frame but with some additional information, namely a plot method to be applied to each row and an optional specification of cognostics we would like to use. We have created some utility functions in the hbgd package to provide these pieces of information in a simple way, using the `add_all_cogs()` and `add_trajectory_plot()` functions. Here we specify a Trelliscope display, plotting trajectories on the z-score scale.
 
 ```{r message=FALSE}
 allfits %>%
@@ -358,4 +388,6 @@ allfits %>%
   trelliscope(name = "brokenstick_haz", path = "rmarkdown_files")
 ```
 
-Point out some interesting trajectories...
+This should open up an interactive viewer in your web browser.
+
+Explore the display...
