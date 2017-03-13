@@ -303,7 +303,201 @@ The ages at which measurements are taken have a monthly periodicity.
 
 ## Applying Growth Models
 
---- An example or two from Samer's code here ---
+Since the data is longitudinal and the growth pattern over time is nonlinear we will be exploring some mixed effects nonlinear growth models.
+First we start by fitting a simple exponential growth model:
+Length= Linf - (Linf - L0) * exp(-Kgr * AGE)
+where
+Linf is the asymptote (maximum possible length)
+L0 is the length at time = 0
+Kgr is the rate of exponential growth
+
+```{r}
+source("ModelFunctions.r")
+require(nlme)
+d <- anthro_enroll
+d$AGEMONTH <- days2months(d$AGEDAY)
+ggplot(d,aes(AGEMONTH,HTCM,group=SUBJID))+
+         geom_line()
+
+fit1 <- nlme(HTCM ~ MonoExpModel(lnLinf, lnL0, lnKgr, AGEMONTH),
+  random = list(SUBJID = lnLinf + lnL0 + lnKgr ~ 1),
+  fixed = lnLinf + lnL0 + lnKgr ~ 1,
+  start = c(lnLinf = log(130), lnL0 = log(50), lnKgr = log(0.01)),
+  data = d,
+  na.action = na.omit)
+fit1
+```
+The output from the model has several components. Let us extract the parameters the AIC and look at the residuals plot. Note that the parameters were log transformed in the fitting to keep them in the positive domain.
+
+```{r}
+
+fit1.params <- exp(fixed.effects(fit1))
+print(fit1.params)
+AIC(fit1)
+plot(fit1)
+
+```
+The Linf is 97 cm and L0 is 51 cm both are resonable. The growth rate is approximately 5 % per month and is constant throughout the time the kid is followed. Can we assume that growth rate is constant ?
+The residuals plot show that we have a sigmoidal trend. Obviously there is an important feature of the growth that this model is not able to capture. We will get back to the AIC for model comparisons.
+
+Before trying more elaborate models let us see how the data based rate of growth (velocity) versus the model based one compare.
+The data based velocity is a simple timewise difference of length divided by the age difference 
+(Length obs2 - length obs1) / (age obs2 - age obs1)
+The model based velocity can be computed using the derivative of the funciton
+Length= Linf - (Linf - L0) * exp(-Kgr * AGE)
+dldt  = Kgr * (Linf - L0) * exp(-Kgr * AGE)
+
+
+```{r}
+deltadplyr <- d %>%
+  select(SUBJID, AGEMONTH, HTCM) %>%
+  group_by(SUBJID) %>%
+  mutate(
+    difflcm = HTCM - lag(HTCM),# HTCM difference between the two consecutive observation
+    diffage = AGEMONTH - lag(AGEMONTH), # age difference between the two consecutive observation
+    dldt = difflcm / diffage,
+    obsmean =  (HTCM + lag(HTCM))/2,# HTCM difference mean
+    tmean =  (AGEMONTH + lag(AGEMONTH))/2 )# age difference mean
+# the ratio is the velocity note that velocity is not defined for the first observation of each subject let us filter it out
+deltadplyr <- deltadplyr%>%
+filter(!is.na(dldt))
+
+pred.fit1 <- data.frame(AGEMONTH = sort(unique(d$AGEMONTH)))
+pred.fit1$pred <- predict(fit1, newdata = pred.fit1, level = 0)
+pred.fit1$dldt <- with(as.list(fixef(fit1)),
+  exp(lnKgr) * (exp(lnLinf) - exp(lnL0)) * exp(-exp(lnKgr) * pred.fit1$AGEMONTH))
+
+plot1 <- ggplot( data = deltadplyr, aes (x = obsmean, y = dldt) ) + 
+  geom_point(alpha=0.1)+
+  xlab ("Length (cm)" )+
+  ylab ( "Derivative of length (dL/dt)") +
+  stat_smooth(method = "gam", formula = y ~ s(x),aes(col="Data Based"),size=1.5) +
+  geom_line(data = pred.fit1, aes(x = pred, y = dldt,col="Exp Model Based"),size=1.5)+
+  labs(colour="")+
+  scale_colour_manual(breaks = c("Data Based", "Exp Model Based"),
+    values = c("darkgray", "red"))+
+  theme_bw()
+plot1
+```
+
+We notice that the "velocity" is changing and it is not simply proportional to the current length as we grow taller the velocity becomes slower let us try a modelr where the rate of growth decelerate with time.
+Kgr   = Kgr0 * (1 - Kgrdec + Kgrdec * exp(-lambda * TIME))
+Length= Linf - (Linf - L0) * exp(-Kgr * TIME)
+The difference with the previous model is that the growth rate Kgr is decelerating over time it starts with a baseline Kgr0 and decelerates using a hyperbolic function  
+
+
+
+```{r}
+fit2 <- nlme(HTCM ~ NLLDmodel(lnLinf, lnL0, lnKgr0, logitKgrdec, lnTTP50, AGEMONTH),
+  random = list(SUBJID = pdDiag(lnLinf + lnKgr0 + lnL0 ~ 1)),
+  fixed = lnLinf + lnL0 + lnKgr0 + logitKgrdec + lnTTP50 ~ 1,
+  start = c(lnLinf = log(121), lnL0 = log(44), lnKgr0 = log(0.05),
+    logitKgrdec = 1.7, lnTTP50 = log(6)),
+  data = d, na.action = na.omit,
+  control = nlmeControl(maxIter = 100, returnObject = TRUE), verbose = TRUE)
+
+fit2.params <- fixed.effects(fit2)
+print( c( exp( fit2.params[c(1,2,3,5)]  ), expit( fit2.params[4]  )   ) )
+
+AIC(fit2) #  29219.9 fit 2 has lower(better) AIC
+AIC(fit1) #  31793.38
+plot(fit2)
+
+pred.fit2 <- data.frame(AGEMONTH = sort(unique(d$AGEMONTH)))
+pred.fit2$pred <- predict(fit2, newdata = pred.fit2, level = 0)
+pred.fit2$lambda <- log(2) / exp(fixef(fit2)["lnTTP50"])
+pred.fit2$Kgrdec <- expit(fixef(fit2)["logitKgrdec"])
+pred.fit2$kgr <- with(as.list(fixef(fit2)),
+  exp(lnKgr0) * (1 - pred.fit2$Kgrdec + pred.fit2$Kgrdec *
+    exp(-pred.fit2$lambda * pred.fit2$AGEMONTH)))
+
+pred.fit2$dldt <- with(as.list(c(fixef(fit2), pred.fit2)),
+  (exp(lnLinf) - exp(lnL0)) * exp(-kgr * AGEMONTH) *
+    (kgr - AGEMONTH * lambda * exp(lnKgr0) * Kgrdec * exp(-lambda * AGEMONTH)))
+
+plot2 <-
+  ggplot(deltas, aes(obsmean, dldt)) +
+  geom_point(alpha = 0.05) +
+  stat_smooth(method = "gam", formula = y~s(x), aes(col = "Data Based"), size = 1.2) +
+  geom_line(data = pred.fit1, aes(x = pred, y = dldt, col = "Exp Model"), size = 1.2) +
+  geom_line(data = pred.fit2, aes(x = pred, y = dldt, col = "Nonlinear Deceleration Model"), size = 1.2) +
+  xlab("Length (cm)") +
+  ylab("Derivative of length (dL/dt)") +
+  scale_colour_manual(breaks = c("Data Based", "Exp Model", "Nonlinear Deceleration Model"),
+    values = c("darkgray", "red", "blue")) +
+  theme_bw() +
+  theme(legend.title = element_blank(), legend.position = "top",
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 12, face = "bold")) +
+  theme(panel.grid.minor  =  element_line(colour = "gray", linetype = "dotted")) +
+  theme(panel.grid.major =  element_line(colour = "gray", linetype = "solid")) +
+  coord_cartesian(ylim = c(-5, 10))
+
+plot2
+anova(fit1, fit2, test = "F")
+```
+The nonlinear deceleration model has lower AIC better residual patterns and better matches the data based velocity.
+What about potential covariates that let us explain some of the heterogeneity ?
+Let us extract the random effects of the fit and see if they correlate with some of the covariates we have.
+
+```{r}
+fit2RE <- ranef(fit2, augFrame = TRUE, data = d)
+fit2RE$MODEL <- "NLD - No Covariates"
+fit2RE <- fit2RE %>%
+gather(randomeffects,value, lnLinf,lnKgr0  ,lnL0 )
+
+#look at the boxplot by sex and panel by SES socioeconomix status
+ggplot(fit2RE, aes(SEX, value)) +
+  geom_boxplot(varwidth = TRUE)+
+  geom_smooth(aes(group=1),se=FALSE)+
+  facet_grid(randomeffects~SES, scales="free_y")+
+  theme_bw()
+
+# we see some trend related to sex
+
+```
+Since we notice some sex related difference let us include it into the model
+
+
+```{r}
+d$SEX <- as.factor(d$SEX)
+
+fit3 <- update(fit2,
+  fixed = list(lnLinf + lnL0 + lnKgr0 ~ SEX, logitKgrdec + lnTTP50 ~ 1),
+  start = c(lnLinf = c(log(100), 0),
+    lnL0 = c(log(50), 0),
+    lnKgr0 = c(log(0.01), 0),
+    logitKgrdec = 0,
+    lnTTP50 = log(4)
+  ))
+
+fit3RE <- ranef(fit3, augFrame = TRUE, data = d)
+fit3RE$MODEL <- "NLD - SEX Covariates"
+names(fit3RE)[1:3] <- names(ranef(fit2, augFrame = TRUE, data = d))[1:3]
+fit3RE <- fit3RE %>%
+gather(randomeffects,value, lnLinf,lnKgr0  ,lnL0 )
+
+#look at the boxplot by sex and panel by SES socioeconomix status
+ggplot(fit3RE, aes(SEX, value)) +
+  geom_boxplot(varwidth = TRUE)+
+  geom_smooth(aes(group=1),se=FALSE)+
+  facet_grid(randomeffects~SES, scales="free_y")+
+  theme_bw()
+
+
+fit2and3RE<- rbind(fit2RE,fit3RE)
+
+ggplot(fit2and3RE, aes(SEX, value,col=MODEL)) +
+  geom_boxplot()+
+  geom_smooth(aes(group=MODEL,colour=MODEL),se=FALSE,size=2)+
+  facet_grid(randomeffects~MODEL, scales="free_y")+
+  theme_bw()
+
+anova(fit2, fit3, test = "F")
+
+```
+
+
 
 ## Applying Growth Models Using the hbgd Package
 
