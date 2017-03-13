@@ -1,9 +1,5 @@
 # Run script to create functions to define the models
-source("ModelFunctions.T")
-
-# Define the logit and inverse-logit (aka expit) functions
-logit <- function(x) log(x / (1 - x))
-expit <- function(x) 1 / (1 + exp(-x))
+source("ModelFunctions.r")
 
 require(metrumrg)
 require(Hmisc)
