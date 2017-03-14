@@ -341,10 +341,6 @@ The residuals plot shows that we have a sigmoidal trend. Obviously there is an i
 Before trying more elaborate models let us see how the data based rate of growth (velocity) versus the model based one compare.
 The data based velocity is a simple timewise difference of length divided by the age difference
 (Length obs2 - length obs1) / (age obs2 - age obs1)
-The model based velocity can be computed using the derivative of the funciton
-Length= Linf - (Linf - L0) * exp(-Kgr * AGE)
-dldt  = Kgr * (Linf - L0) * exp(-Kgr * AGE)
-
 
 ```{r}
 deltadplyr <- d %>%
@@ -360,29 +356,40 @@ deltadplyr <- d %>%
 deltadplyr <- deltadplyr%>%
 filter(!is.na(dldt))
 
+plot0 <- ggplot( data = deltadplyr, aes (x = obsmean, y = dldt) ) +
+  geom_point(alpha=0.1)+
+  xlab ("Length (cm)" )+
+  ylab ( "Derivative of length (dL/dt)") +
+  stat_smooth(method = "gam", formula = y ~ s(x),aes(col="Data Based"),size=1.5)+
+  labs(colour="")+
+  scale_colour_manual(breaks = c("Data Based"),
+    values = c("darkgray"))+
+  theme_bw()
+plot0
+```
+We notice that the "velocity" is changing and it is not simply proportional to the current length as we grow taller the velocity becomes slower.
+The model based velocity can be computed using the derivative of the function
+Length= Linf - (Linf - L0) * exp(-Kgr * AGE)
+dldt  =  Kgr * (Linf - L0) * exp(-Kgr * AGE)
+
+```{r}
 pred.fit1 <- data.frame(AGEMONTH = sort(unique(d$AGEMONTH)))
 pred.fit1$pred <- predict(fit1, newdata = pred.fit1, level = 0)
 pred.fit1$dldt <- with(as.list(fixef(fit1)),
   exp(lnKgr) * (exp(lnLinf) - exp(lnL0)) * exp(-exp(lnKgr) * pred.fit1$AGEMONTH))
 
-plot1 <- ggplot( data = deltadplyr, aes (x = obsmean, y = dldt) ) +
-  geom_point(alpha=0.1)+
-  xlab ("Length (cm)" )+
-  ylab ( "Derivative of length (dL/dt)") +
-  stat_smooth(method = "gam", formula = y ~ s(x),aes(col="Data Based"),size=1.5) +
+plot1 <- plot0 +
   geom_line(data = pred.fit1, aes(x = pred, y = dldt,col="Exp Model Based"),size=1.5)+
-  labs(colour="")+
   scale_colour_manual(breaks = c("Data Based", "Exp Model Based"),
-    values = c("darkgray", "red"))+
-  theme_bw()
+    values = c("darkgray", "red"))
 plot1
 ```
 
-We notice that the "velocity" is changing and it is not simply proportional to the current length as we grow taller the velocity becomes slower let us try a model where the rate of growth decelerates with time.
+We see that the velocity of the exponential model is "linear" and does not describe the data well.
+Let us try a model where the rate of growth decelerates with time.
 Kgr   = Kgr0 * (1 - Kgrdec + Kgrdec * exp(-lambda * TIME))
 Length= Linf - (Linf - L0) * exp(-Kgr * TIME)
 The difference with the previous model is that the growth rate Kgr is decelerating over time it starts with a baseline Kgr0 and decelerates using a hyperbolic function.
-
 
 ```{r}
 fit2 <- nlme(HTCM ~ NLLDmodel(lnLinf, lnL0, lnKgr0, logitKgrdec, lnTTP50, AGEMONTH),
@@ -391,7 +398,7 @@ fit2 <- nlme(HTCM ~ NLLDmodel(lnLinf, lnL0, lnKgr0, logitKgrdec, lnTTP50, AGEMON
   start = c(lnLinf = log(121), lnL0 = log(44), lnKgr0 = log(0.05),
     logitKgrdec = 1.7, lnTTP50 = log(6)),
   data = d, na.action = na.omit,
-  control = nlmeControl(maxIter = 100, returnObject = TRUE), verbose = TRUE)
+  control = nlmeControl(maxIter = 20, returnObject = TRUE), verbose = FALSE)
 
 fit2.params <- fixed.effects(fit2)
 print( c( exp( fit2.params[c(1,2,3,5)]  ), expit( fit2.params[4]  )   ) )
@@ -399,7 +406,10 @@ print( c( exp( fit2.params[c(1,2,3,5)]  ), expit( fit2.params[4]  )   ) )
 AIC(fit2) #  29219.9 fit 2 has lower(better) AIC
 AIC(fit1) #  31793.38
 plot(fit2)
+```
+The nonlinear deceleration model has lower AIC better residual patterns. How about the velocity ?
 
+```{r}
 pred.fit2 <- data.frame(AGEMONTH = sort(unique(d$AGEMONTH)))
 pred.fit2$pred <- predict(fit2, newdata = pred.fit2, level = 0)
 pred.fit2$lambda <- log(2) / exp(fixef(fit2)["lnTTP50"])
@@ -412,17 +422,10 @@ pred.fit2$dldt <- with(as.list(c(fixef(fit2), pred.fit2)),
   (exp(lnLinf) - exp(lnL0)) * exp(-kgr * AGEMONTH) *
     (kgr - AGEMONTH * lambda * exp(lnKgr0) * Kgrdec * exp(-lambda * AGEMONTH)))
 
-plot2 <-
-  ggplot(deltadplyr, aes(obsmean, dldt)) +
-  geom_point(alpha = 0.05) +
-  stat_smooth(method = "gam", formula = y~s(x), aes(col = "Data Based"), size = 1.2) +
-  geom_line(data = pred.fit1, aes(x = pred, y = dldt, col = "Exp Model"), size = 1.2) +
+plot2 <- plot1 +
   geom_line(data = pred.fit2, aes(x = pred, y = dldt, col = "Nonlinear Deceleration Model"), size = 1.2) +
-  xlab("Length (cm)") +
-  ylab("Derivative of length (dL/dt)") +
-  scale_colour_manual(breaks = c("Data Based", "Exp Model", "Nonlinear Deceleration Model"),
+  scale_colour_manual(breaks = c("Data Based", "Exp Model Based", "Nonlinear Deceleration Model"),
     values = c("darkgray", "red", "blue")) +
-  theme_bw() +
   theme(legend.title = element_blank(), legend.position = "top",
     axis.text = element_text(size = 12),
     axis.title = element_text(size = 12, face = "bold")) +
@@ -433,9 +436,9 @@ plot2 <-
 plot2
 anova(fit1, fit2, test = "F")
 ```
-The nonlinear deceleration model has lower AIC better residual patterns and better matches the data based velocity.
-What about potential covariates that let us explain some of the heterogeneity ?
-Let us extract the random effects of the fit and see if they correlate with some of the covariates we have.
+The nonlinear deceleration model better matches the data based velocity.
+What about potential covariates that let us explain some of the heterogeneity?
+We will extract the random effects of the fit and see if they correlate with some of the covariates we have.
 
 ```{r}
 fit2RE <- ranef(fit2, augFrame = TRUE, data = d)
@@ -443,7 +446,7 @@ fit2RE$MODEL <- "NLD - No Covariates"
 fit2RE <- fit2RE %>%
 gather(randomeffects,value, lnLinf,lnKgr0  ,lnL0 )
 
-#look at the boxplot by sex and panel by SES socioeconomix status
+#look at the boxplot by sex and panel by SES socioeconomic status
 ggplot(fit2RE, aes(SEX, value)) +
   geom_boxplot(varwidth = TRUE)+
   geom_smooth(aes(group=1),se=FALSE)+
@@ -468,6 +471,13 @@ fit3 <- update(fit2,
     lnTTP50 = log(4)
   ))
 
+summary(fit3)
+```
+The model takes time to run and it warns about no convergence.
+We will still use this model for now. Ideally the model need to be tweaked and kept running longer untill it converges.
+As we did for fit2, we will extract the random effects of the fit and see if they correlation has been explained.
+
+```{r}
 fit3RE <- ranef(fit3, augFrame = TRUE, data = d)
 fit3RE$MODEL <- "NLD - SEX Covariates"
 names(fit3RE)[1:3] <- names(ranef(fit2, augFrame = TRUE, data = d))[1:3]# unifying names to be able to do a joint plot later on
@@ -480,10 +490,12 @@ ggplot(fit3RE, aes(SEX, value)) +
   geom_smooth(aes(group=1),se=FALSE)+
   facet_grid(randomeffects~SES, scales="free_y")+
   theme_bw()
-# trend has been fixed but let us look at both at the same time 
-
 fit2and3RE<- rbind(fit2RE,fit3RE)
+```
+The trend is now more like a flat line and we will now look at both models at the same time. 
 
+
+```{r}
 ggplot(fit2and3RE, aes(SEX, value,col=MODEL)) +
   geom_boxplot()+
   geom_smooth(aes(group=MODEL,colour=MODEL),se=FALSE,size=2)+
@@ -493,8 +505,7 @@ ggplot(fit2and3RE, aes(SEX, value,col=MODEL)) +
 anova(fit2, fit3, test = "F")
 
 ```
-
-
+Adding Sex on reduced AIC by ~ 2000 points and fixed the random effect trends.
 
 ## Applying Growth Models Using the hbgd Package
 
