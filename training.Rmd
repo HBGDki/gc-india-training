@@ -109,7 +109,15 @@ enroll
 
 We see that there are 250 subjects in our study, and we can look at the values recorded at enrollment for these subjects.
 
-(Possible early very simple exercise: View the data for the other data frames that we read in... How many anthro records are there? How many "post" records are there?)
+***
+**Your Turn:**  View the data for the other data frames that we read in... How many anthro records are there? How many "post" records are there?
+
+```{r}
+cat('Your code goes here')
+```
+
+***
+
 
 ## Joining the Data
 
@@ -179,6 +187,8 @@ ggplot(dat, aes(x = agedays, y = htcm)) +
     method = "gam", formula = y ~ s(x))
 ```
 
+TODO: Exercise: can we identify who the outlying kids are and what characteristics they have?
+
 ### Data Utility Functions
 
 There are other utility functions for dealing with data in the hbgd package. The typical kind of dataset we work with in the package is a single data frame of anthropometric measurements as well as subject-level variables (such as those recorded at enrollment). However, often we want to work with just the subject-level data and ignore the anthropometry. To get just the subject-level data, we can use the function `get_subject_data()`. Below we create a new data frame of just the subject-level data, `subj_dat`, and print it:
@@ -193,6 +203,8 @@ subj_dat
 ### HAZ and WAZ from WHO
 
 We saw in our data check that it was hoping to see `haz` and `waz` (height-for-age z-score and weight-for-age z-score) variables in the data. These can be derived from the `htcm` and `wtkg` variables using the subject's `agedays` and the WHO growth standard, which is built in to the hbgd package. The data checking function also provided us with the code we need to perform this transformation:
+
+NOTE: mention that there is no truncation
 
 ```{r}
 dat$haz <- who_htcm2zscore(dat$agedays, dat$htcm, dat$sex)
@@ -209,6 +221,10 @@ ggplot(dat, aes(x = agedays, y = haz)) +
   geom_smooth(aes(group = 1), colour = "red", size = 1,
     method = "gam", formula = y ~ s(x))
 ```
+
+Q: What covariates predict a child that's not going to recover?
+
+TODO: trelliscope display here of raw data?
 
 ### SGA from INTERGROWTH
 
@@ -233,6 +249,8 @@ abline(v = 10)
 ```
 
 ## Exploratory Plots
+
+TODO: maybe just pick one or two to illustrate something interesting.
 
 The hbgd package has several functions that allow you to get a quick overview of some of the attributes of your dataset.
 
@@ -286,7 +304,7 @@ We can use `plot_first_visit_age()` to get a histogram and quantile plot of age 
 plot_first_visit_age(dat, width = 350, height = 350)
 ```
 
-All children werre observed on day 1.
+All children were observed on day 1.
 
 ### Number of Records by Age
 
@@ -299,7 +317,13 @@ plot_agefreq(agefreq)
 
 The ages at which measurements are taken have a monthly periodicity.
 
+
+CHECKPOINT
+
 ## Applying Growth Models
+
+Include image y = mx as intro to modeling
+
 
 Since the data is longitudinal and the growth pattern over time is nonlinear we will be exploring some mixed effects nonlinear growth models.
 First we start by fitting a simple exponential growth model:
@@ -326,6 +350,8 @@ fit1 <- nlme(HTCM ~ MonoExpModel(lnLinf, lnL0, lnKgr, AGEMONTH),
 fit1
 ```
 The output from the model has several components. Let us extract the parameters the AIC and look at the residuals plot. Note that the parameters were log transformed in the fitting to keep them in the positive domain.
+
+TODO: break into separate chunks
 
 ```{r}
 
@@ -414,7 +440,7 @@ pred.fit2$dldt <- with(as.list(c(fixef(fit2), pred.fit2)),
     (kgr - AGEMONTH * lambda * exp(lnKgr0) * Kgrdec * exp(-lambda * AGEMONTH)))
 
 plot2 <-
-  ggplot(deltas, aes(obsmean, dldt)) +
+  ggplot(deltadplyr, aes(obsmean, dldt)) +
   geom_point(alpha = 0.05) +
   stat_smooth(method = "gam", formula = y~s(x), aes(col = "Data Based"), size = 1.2) +
   geom_line(data = pred.fit1, aes(x = pred, y = dldt, col = "Exp Model"), size = 1.2) +
@@ -456,6 +482,7 @@ ggplot(fit2RE, aes(SEX, value)) +
 ```
 Since we notice some sex related difference let us include it into the model
 
+TODO: move covariate analysis to the end
 
 ```{r}
 d$SEX <- as.factor(d$SEX)
@@ -511,11 +538,14 @@ In this section we will show an example of fitting using the "brokenstick" metho
 
 ### Apply the Brokenstick Model to the data
 
-The brokenstick method...
+The brokenstick method... (define)
 
 To apply a fit method to data, we use the `get_fit()` function. We provide this function with our data, a specification of which method to use, the variables to use in fitting (`x_var` is expected to be `agedays` and `y_var` can be any anthropometric measure or its z-score transformation), and optionally any parameters to pass on to the fitting method being used.
 
 Here, we apply the brokenstick method to HAZ and specify the location of the knots (a brokenstick-specific fitting parameter).
+
+TODO: to find the parameters that you can use, see (point to place in docs)
+TODO: use different method that's faster
 
 ```{r}
 datfit <- get_fit(dat, method = "brokenstick", y_var = "haz",
@@ -573,6 +603,8 @@ Rather than manually creating trajectory plots for each subject, it is very usef
 
 We can accomplish this using the "trelliscopejs" package. Trelliscope is a visualization technique that allows you to create a database of a potentially very large number of plots which you can sort and filter in an interactive viewer. The variables against which you sort and filter are called "cognostics". A Trelliscope display is created using the `trelliscope()` function. This function expects to receive a data frame like our `allfits` data frame but with some additional information, namely a plot method to be applied to each row and an optional specification of cognostics we would like to use. We have created some utility functions in the hbgd package to provide these pieces of information in a simple way, using the `add_all_cogs()` and `add_trajectory_plot()` functions. Here we specify a Trelliscope display, plotting trajectories on the z-score scale.
 
+TODO: add column: ever stunted and ever wasted, severity of stunting (Shasha will send bins)
+
 ```{r message=FALSE}
 allfits %>%
   add_all_cogs() %>%
@@ -595,4 +627,6 @@ Here are some simple interactions you can do with the Trelliscope display:
   - You can click the **"x"** icon next to the existing sort variable ("subjid") to remove the sorting on that variable, and then choose a new variable from the list to sort on. The blue icon next the variable name allows you to toggle the order from increasing to decreasing.
 - Click the "Filter" button on the sidebar to filter the panels to be displayed. A list of cognostic variables is shown and you can select one to filter on. For example, if you select `birthwt`, an interactive histogram showing the distribution of this variable appears and you can click and drag on the distribution to select panels for children that, for example, have low birth weight.
 - Click the "Labels" button on the sidebar to control which labels are displayed underneath each panel.
+
+
 
