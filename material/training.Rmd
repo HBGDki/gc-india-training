@@ -14,7 +14,7 @@ output:
 date: "March 23, 2017"
 ---
 
-NOTE: To follow this document online (and to see interactive visualizations live), please visit https://hbgdki.github.io/gc-india-training/.
+NOTE: To follow this document online (and to see interactive visualizations live), please visit [this page](https://hbgdki.github.io/gc-india-training/index.html).
 
 # Overview
 
@@ -30,13 +30,13 @@ In this training we will cover methods for exploration, modeling, and visualizat
 
 All of the exercises will be carried out using the R statistical programming environment making use of several modeling and visualization R packages, as well as the [hbgd](http://hbgdki.github.io/hbgd/) R package which has been developed to make many of the aspects of working with growth data easier to do.
 
-If you do not have much familiarity with R, you will still be able to comfortably run the examples in this training and follow along with the logic of what we are doing. If you wish to get more experience with R in general, we recommend a free resource, "Swirl" (http://swirlstats.com/) to get acquainted with the basics of R.
+If you do not have much familiarity with R, you will still be able to comfortably run the examples in this training and follow along with the logic of what we are doing. If you wish to get more experience with R in general, we recommend a free resource, ["Swirl"](http://swirlstats.com/) to get acquainted with the basics of R.
 
 Participants will access this training through a virtual machine running in the cloud, with all code and R packages pre-installed and ready to run. Some of the plots will want to open up new windows. Please set up your web browser to allow pop ups by setting your popup blocker to OFF.
 
 ## Running on Your Own
 
-For those wishing to continue their learning after this event, all code and data for these exercises can be found publicly online at https://github.com/hbgdki/gc-india-training and the README file on that page will contain instructions for getting this environment set up in your own environment and will provide links to other useful resources as well. We will also provide executable code and data on a thumb drive for your use.
+For those wishing to continue their learning after this event, all code and data for these exercises can be found publicly online [here](https://github.com/hbgdki/gc-india-training) and the README file on that page will contain instructions for getting this environment set up in your own environment and will provide links to other useful resources as well. We will also provide executable code and data on a thumb drive for your use.
 
 ## Data
 
@@ -97,7 +97,7 @@ The remainder of this document contains suggestions of hands-on examples of work
 
 ## Getting Set Up
 
-To begin, we need to load the R packages into our R environment that we will be using to analyze the data. The major packages we will use throughout are the hbgd (http://hbgdki.github.io/hbgd/) package and packages in the "Tidyverse". This collection of packages provides many powerful methods for many general-purpose data manipulation and visualization tasks. A free, excellent in-depth resource on packages in the Tidyverse can be found at http://r4ds.had.co.nz/.
+To begin, we need to load the R packages into our R environment that we will be using to analyze the data. The major packages we will use throughout are the [hbgd](http://hbgdki.github.io/hbgd/) package and packages in the "Tidyverse". This collection of packages provides many powerful methods for many general-purpose data manipulation and visualization tasks. A free, excellent in-depth resource on packages in the Tidyverse can be found [here](http://r4ds.had.co.nz/).
 
 ```{r message=FALSE}
 library(hbgd)
@@ -193,7 +193,7 @@ hbgd_labels[names(dat)]
 
 Let's make our first plot of the data. Here we will plot height vs. age for each subject and overlay a smooth mean curve.
 
-We will use the "ggplot2" package, whish is one of the most popular add-on packages for R, providing a powerful, flexible and well-thought-out platform to create data visualizations you can customize to your heart's content. A good reference for learning ggplot2 can be found at http://r4ds.had.co.nz/data-visualisation.html.
+We will use the "ggplot2" package, whish is one of the most popular add-on packages for R, providing a powerful, flexible and well-thought-out platform to create data visualizations you can customize to your heart's content. A good reference for learning ggplot2 can be found [here](http://r4ds.had.co.nz/data-visualisation.html).
 
 In addition to using ggplot2, we also use the "plotly" package, which will translate our ggplot2 plot into an interactive plot.
 
@@ -248,7 +248,7 @@ subjdat <- by_subject(dat)
 subjdat %>% select(subjid, longi) # just look at two columns
 ```
 
-We see that the result of calling `by_subject()` on our data returns a data frame with 250 rows -- one row per subject. But what happened to our longitudinal data? If you look closely at the output dataset `subdat`, you will see that there is a new column, `longi`, which is a data frame of the longitudinal data for the subject. This column is not a scalar data type like we are used to seeing in cells of a data frame, but is a "list column". This is a useful way to store arbitrary data in a data frame format, and you can read more about this at http://r4ds.had.co.nz/many-models.html.
+We see that the result of calling `by_subject()` on our data returns a data frame with 250 rows -- one row per subject. But what happened to our longitudinal data? If you look closely at the output dataset `subdat`, you will see that there is a new column, `longi`, which is a data frame of the longitudinal data for the subject. This column is not a scalar data type like we are used to seeing in cells of a data frame, but is a "list column". This is a useful way to store arbitrary data in a data frame format, and you can read more about this [here](http://r4ds.had.co.nz/many-models.html).
 
 If you are curious to inspect what is contained in the `longi` column, we can inspect it for the first subject:
 
