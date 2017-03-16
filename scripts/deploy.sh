@@ -38,6 +38,7 @@ done
 
 
 sudo cp -rf /home/ubuntu/gc-india-training/data /home/rstudio/
+sudo cp -rf /home/ubuntu/gc-india-training/images /home/rstudio/
 sudo cp -f /home/ubuntu/gc-india-training/training.Rmd /home/rstudio/
 sudo cp -f /home/ubuntu/gc-india-training/ModelFunctions.R /home/rstudio/
 sudo chown -R rstudio:rstudio /home/rstudio/
@@ -46,6 +47,7 @@ sudo chown -R rstudio:rstudio /home/rstudio/
 for u in {1..10}
 do
   sudo cp -rf /home/ubuntu/gc-india-training/data /home/user$u/
+  sudo cp -rf /home/ubuntu/gc-india-training/images /home/user$u/
   sudo cp -f /home/ubuntu/gc-india-training/training.Rmd /home/user$u/
   sudo cp -f /home/ubuntu/gc-india-training/ModelFunctions.R /home/user$u/
   sudo chown -R user$u:user$u /home/user$u/
@@ -59,6 +61,7 @@ sudo su - -c "R -e \"install.packages('brokenstick', repos=c(CRAN='http://cran.r
 sudo su - -c "R -e \"install.packages('face', repos=c(CRAN='http://cran.rstudio.com/', deltarho='http://packages.deltarho.org'))\""
 sudo su - -c "R -e \"devtools::install_github('hafen/trelliscopejs')\""
 sudo su - -c "R -e \"devtools::install_github('hafen/hbgd@tidy')\""
+sudo su - -c "R -e \"install.packages('plotly', repos='http://cran.rstudio.com/')\""
 
 sudo su - -c "R -e \"install.packages('XML', repos='http://cran.rstudio.com/')\""
 sudo su - -c "R -e \"install.packages('Hmisc', repos='http://cran.rstudio.com/')\""
