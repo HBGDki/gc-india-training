@@ -1,20 +1,26 @@
 ---
 title: "Grand Challenges India HBGDki Training"
 author:
-  - "Ryan Hafen, rhafen\\@gmail.com"
-  - "Samer Mouksassi, Samer.Mouksassi\\@certara.com"
-  - "Shasha Jumbe, Shasha.Jumbe\\@gatesfoundation.org"
+- Ryan Hafen, rhafen\@gmail.com
+- Samer Mouksassi, Samer.Mouksassi\@certara.com
+- Shasha Jumbe, Shasha.Jumbe\@gatesfoundation.org
+date: "March 23, 2017"
 output:
   html_document:
     self_contained: no
     theme: flatly
     toc: yes
+    toc_depth: 2
   pdf_document:
+    latex_engine: xelatex
     toc: yes
-date: "March 23, 2017"
+fontsize: 10pt
+mainfont: Lato
+documentclass: article
+classoption: a4paper
 ---
 
-NOTE: To follow this document online (and to see interactive visualizations live), please visit [this page](https://hbgdki.github.io/gc-india-training/index.html).
+NOTE: To follow this document online (and to see interactive visualizations live), please visit https://hbgdki.github.io/gc-india-training/index.html.
 
 # Overview
 
@@ -28,19 +34,19 @@ In this training we will cover methods for exploration, modeling, and visualizat
 
 ## R Environment
 
-All of the exercises will be carried out using the R statistical programming environment making use of several modeling and visualization R packages, as well as the [hbgd](http://hbgdki.github.io/hbgd/) R package which has been developed to make many of the aspects of working with growth data easier to do.
+All of the exercises will be carried out using the R statistical programming environment making use of several modeling and visualization R packages, as well as the hbgd (http://hbgdki.github.io/hbgd/) R package which has been developed to make many of the aspects of working with growth data easier to do.
 
-If you do not have much familiarity with R, you will still be able to comfortably run the examples in this training and follow along with the logic of what we are doing. If you wish to get more experience with R in general, we recommend a free resource, ["Swirl"](http://swirlstats.com/) to get acquainted with the basics of R.
+If you do not have much familiarity with R, you will still be able to comfortably run the examples in this training and follow along with the logic of what we are doing. If you wish to get more experience with R in general, we recommend a free resource, "Swirl" (http://swirlstats.com/) to get acquainted with the basics of R.
 
 Participants will access this training through a virtual machine running in the cloud, with all code and R packages pre-installed and ready to run. Some of the plots will want to open up new windows. Please set up your web browser to allow pop ups by setting your popup blocker to OFF.
 
 ## Running on Your Own
 
-For those wishing to continue their learning after this event, all code and data for these exercises can be found publicly online [here](https://github.com/hbgdki/gc-india-training) and the README file on that page will contain instructions for getting this environment set up in your own environment and will provide links to other useful resources as well. We will also provide executable code and data on a thumb drive for your use.
+For those wishing to continue their learning after this event, all code and data for these exercises can be found publicly online at https://github.com/hbgdki/gc-india-training and the README file on that page will contain instructions for getting this environment set up in your own environment and will provide links to other useful resources as well. We will also provide executable code and data on a thumb drive for your use.
 
 ## Data
 
-In this training, we will work with synthetic data from a hypothetical study. This data was created from a model build from HBGD knowledgebase assets and any similarity to any one study is purely accidental. We have 3 csv files that might mirror how data is collected and maintained throughout the course of a study.
+In this training, we will work with synthetic data from a hypothetical study. This data was created from a model built from HBGD knowledgebase assets and any similarity to any one study is purely accidental. We have 3 csv files that might mirror how data is collected and maintained throughout the course of a study.
 
 ### enrollment.csv
 
@@ -97,7 +103,7 @@ The remainder of this document contains suggestions of hands-on examples of work
 
 ## Getting Set Up
 
-To begin, we need to load the R packages into our R environment that we will be using to analyze the data. The major packages we will use throughout are the [hbgd](http://hbgdki.github.io/hbgd/) package and packages in the "Tidyverse". This collection of packages provides many powerful methods for many general-purpose data manipulation and visualization tasks. A free, excellent in-depth resource on packages in the Tidyverse can be found [here](http://r4ds.had.co.nz/).
+To begin, we need to load the R packages into our R environment that we will be using to analyze the data. The major packages we will use throughout are the hbgd (http://hbgdki.github.io/hbgd/) package and packages in the "Tidyverse". This collection of packages provides many powerful methods for many general-purpose data manipulation and visualization tasks. A free, excellent in-depth resource on packages in the Tidyverse can be found at http://r4ds.had.co.nz/.
 
 ```{r message=FALSE}
 library(hbgd)
@@ -193,7 +199,7 @@ hbgd_labels[names(dat)]
 
 Let's make our first plot of the data. Here we will plot height vs. age for each subject and overlay a smooth mean curve.
 
-We will use the "ggplot2" package, whish is one of the most popular add-on packages for R, providing a powerful, flexible and well-thought-out platform to create data visualizations you can customize to your heart's content. A good reference for learning ggplot2 can be found [here](http://r4ds.had.co.nz/data-visualisation.html).
+We will use the "ggplot2" package, which is one of the most popular add-on packages for R, providing a powerful, flexible and well-thought-out platform to create data visualizations you can customize to your heart's content. A good reference for learning ggplot2 can be found at http://r4ds.had.co.nz/data-visualisation.html.
 
 In addition to using ggplot2, we also use the "plotly" package, which will translate our ggplot2 plot into an interactive plot.
 
@@ -219,7 +225,7 @@ dat$haz <- who_htcm2zscore(dat$agedays, dat$htcm, dat$sex)
 dat$waz <- who_wtkg2zscore(dat$agedays, dat$wtkg, dat$sex)
 ```
 
-A full set of WHO conversion functions can be seen [here](http://hbgdki.github.io/hbgd/rd.html#specific_value_to_centilez_score).
+A full set of WHO conversion functions can be seen at http://hbgdki.github.io/hbgd/rd.html#specific_value_to_centilez_score or by typing `?who_htcm2zscore` in your R console.
 
 Now that we have made this conversion, let's look at the growth curves on the z-score scale. Here, we use the same code as in our previous plot, but replace `htcm` with `haz`.
 
@@ -248,7 +254,7 @@ subjdat <- by_subject(dat)
 subjdat %>% select(subjid, longi) # just look at two columns
 ```
 
-We see that the result of calling `by_subject()` on our data returns a data frame with 250 rows -- one row per subject. But what happened to our longitudinal data? If you look closely at the output dataset `subdat`, you will see that there is a new column, `longi`, which is a data frame of the longitudinal data for the subject. This column is not a scalar data type like we are used to seeing in cells of a data frame, but is a "list column". This is a useful way to store arbitrary data in a data frame format, and you can read more about this [here](http://r4ds.had.co.nz/many-models.html).
+We see that the result of calling `by_subject()` on our data returns a data frame with 250 rows -- one row per subject. But what happened to our longitudinal data? If you look closely at the output dataset `subdat`, you will see that there is a new column, `longi`, which is a data frame of the longitudinal data for the subject. This column is not a scalar data type like we are used to seeing in cells of a data frame, but is a "list column". This is a useful way to store arbitrary data in a data frame format, and you can read more about this at http://r4ds.had.co.nz/many-models.html.
 
 If you are curious to inspect what is contained in the `longi` column, we can inspect it for the first subject:
 
@@ -262,13 +268,13 @@ The `longi` column is simply a data frame of the time-varying variables for the 
 
 There is a built-in plot method for plotting individual trajectories. For example, to plot the fitted trajectory for the subject with subject ID = 1:
 
-```{r}
+```{r fig.width=6, fig.height=6}
 plot(subjdat, subjid = 1)
 ```
 
 This plots the trajectory of `htcm` by default. We can plot the `haz` by specifying `y_var = "haz"`.
 
-```{r}
+```{r fig.width=6, fig.height=6}
 plot(subjdat, subjid = 1, y_var = "haz")
 ```
 
@@ -287,7 +293,7 @@ message('Your code goes here')
 
 ### Computing trajectory metrics, or "cognostics"
 
-We can choose which trajectories to visualize in a more meaningful way by adding some metrics, which we call "cognostics" (TODO: define) to the data. Using the hbgd package, this can be done with a function `add_longi_cogs()`.
+We can choose which trajectories to visualize in a more meaningful way by adding some metrics, which we call "cognostics" to the data. The term "cognostics" refers to metrics about each child that can be useful to in guiding us to subgroups of interest. Using the hbgd package, this can be done with a function `add_longi_cogs()`.
 
 ```{r}
 subjdat <- add_longi_cogs(subjdat)
@@ -337,7 +343,7 @@ ggplot(low_early, aes(x = agedays, y = haz)) +
   geom_line(aes(group = subjid), alpha = 0.5)
 ```
 
-Now we can see clearly the phenomenon of these subjects having a significant recover after dropping in length halfway into their first year.
+Now we can see clearly the phenomenon of these subjects having a significant recovery after dropping in length halfway into their first year.
 
 ***
 **Your Turn:**  We noticed a few outlying trajectories jumping up higher than the rest in HAZ early on in life and then dropping back down. Can you make a plot in a similar fashion as we just did for low trajectories? Hint: look for subjects who have a `max_haz` that is larger than some high value (look at the plot of all trajectories above to get an idea of how high). You may also want to additionally filter on `max_haz_age`.
@@ -796,7 +802,7 @@ As we saw earlier with `by_subject()`, this result is a data frame with one row 
 
 There is a built-in plot method for plotting individual trajectories. For example, to plot the fitted trajectory for the second subject:
 
-```{r}
+```{r fig.width=6, fig.height=6}
 plot(allfits$fit[[2]])
 ```
 
@@ -806,7 +812,7 @@ This child was tracking well below stunted for the first year of life and then r
 
 It is often useful to look at the data and fitted trajectory on the z-score scale, which we can do with `plot_z()`.
 
-```{r}
+```{r fig.width=6, fig.height=6}
 plot_z(allfits$fit[[2]])
 ```
 
@@ -849,7 +855,7 @@ filter(subj_dat, subjid == 139)
 
 The hbgd package has other growth standards available for use, including INTERGROWTH fetal and birth standards. Since this data has gestational age at birth and birthweight, we can use the INTERGROWTH birth standard to look at the distribution of children's birth weight percentiles and see how much of the population is small for gestational age (SGA).
 
-Looking at the documentation for the INTERGROWTH conversion function [here](http://hbgdki.github.io/hbgd/rd.html#specific_value_to_centilez_score_1), we see that it requires us to provide birth weight in kilograms. From our labels above, we saw that the variable `birthwt` should be reported in grams, so we make the conversion.
+Looking at the documentation for the INTERGROWTH conversion function at http://hbgdki.github.io/hbgd/rd.html#specific_value_to_centilez_score_1, we see that it requires us to provide birth weight in kilograms. From our labels above, we saw that the variable `birthwt` should be reported in grams, so we make the conversion.
 
 Note that we want to apply this conversion to only
  our subject-level dataset since it has one record per subject, while `dat` has multiple rows per subject.
