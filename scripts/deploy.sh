@@ -68,5 +68,6 @@ sudo su - -c "R -e \"install.packages('Hmisc', repos='http://cran.rstudio.com/')
 sudo su - -c "R -e \"install.packages('reshape', repos='http://cran.rstudio.com/')\""
 sudo su - -c "R -e \"install.packages('gamlss', repos='http://cran.rstudio.com/')\""
 sudo su - -c "R -e \"install.packages('metrumrg', repos='http://R-Forge.R-project.org')\""
+sudo su - -c "R -e \"install.packages('nlme', repos='http://cran.rstudio.com/')\""
 
 sudo chmod -R 755 /usr/local/lib/R/site-library
