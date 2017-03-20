@@ -580,7 +580,7 @@ where
 
 ```{r message=FALSE}
 source("ModelFunctions.R")
-require(nlme)
+library(nlme)
 ```
 
 This run will take about 10 seconds.
