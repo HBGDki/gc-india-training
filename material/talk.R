@@ -66,6 +66,9 @@ plot_first_visit_age(dat, width = 350, height = 350)
 agefreq <- get_agefreq(dat)
 plot_agefreq(agefreq)
 
+datfit <- get_fit(dat, method = "brokenstick", y_var = "haz",
+  knots = seq(1, 1100, by = 150))
+
 allfits <- fit_all_trajectories(dat, datfit)
 
 plot(allfits$fit[[2]])
