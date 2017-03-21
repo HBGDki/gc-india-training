@@ -37,19 +37,19 @@ do
 done
 
 
-sudo cp -rf /home/ubuntu/gc-india-training/data /home/rstudio/
-sudo cp -rf /home/ubuntu/gc-india-training/images /home/rstudio/
-sudo cp -f /home/ubuntu/gc-india-training/training.Rmd /home/rstudio/
-sudo cp -f /home/ubuntu/gc-india-training/ModelFunctions.R /home/rstudio/
+sudo cp -rf /home/ubuntu/gc-india-training/material/data /home/rstudio/
+sudo cp -rf /home/ubuntu/gc-india-training/material/images /home/rstudio/
+sudo cp -f /home/ubuntu/gc-india-training/material/training.Rmd /home/rstudio/
+sudo cp -f /home/ubuntu/gc-india-training/material/ModelFunctions.R /home/rstudio/
 sudo chown -R rstudio:rstudio /home/rstudio/
 
 # since we'll be updating files, make this a separate loop
 for u in {1..10}
 do
-  sudo cp -rf /home/ubuntu/gc-india-training/data /home/user$u/
-  sudo cp -rf /home/ubuntu/gc-india-training/images /home/user$u/
-  sudo cp -f /home/ubuntu/gc-india-training/training.Rmd /home/user$u/
-  sudo cp -f /home/ubuntu/gc-india-training/ModelFunctions.R /home/user$u/
+  sudo cp -rf /home/ubuntu/gc-india-training/material/data /home/user$u/
+  sudo cp -rf /home/ubuntu/gc-india-training/material/images /home/user$u/
+  sudo cp -f /home/ubuntu/gc-india-training/material/training.Rmd /home/user$u/
+  sudo cp -f /home/ubuntu/gc-india-training/material/ModelFunctions.R /home/user$u/
   sudo chown -R user$u:user$u /home/user$u/
 done
 
