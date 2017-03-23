@@ -1,6 +1,6 @@
 # HBGDki India Grand Challenges Training
 
-Welcome to the repository for the HBGDki India Grand Challenges Training course material.
+Welcome to the repository for the HBGDki India Grand Challenges Training course material, presented at the Grand Challenges India meetings March 23, 2017 by [Shasha Jumbe](Shasha.Jumbe@gatesfoundation.org), [Ryan Hafen](rhafen@gmail.com), and [Samer Mouksassi](Samer.Mouksassi@certara.com).
 
 ## Installation
 
@@ -48,3 +48,4 @@ The following resources can be useful to browse prior to the tutorial to help at
 - [dplyr vignette](https://cran.r-project.org/web/packages/dplyr/vignettes/introduction.html)
 - [ggplot2 cheatsheet](https://www.rstudio.com/wp-content/uploads/2016/11/ggplot2-cheatsheet-2.1.pdf)
 
+Any questions or inquiries about further training possibilities can be directed to the presenters (contact info available in links to presenters names above).
